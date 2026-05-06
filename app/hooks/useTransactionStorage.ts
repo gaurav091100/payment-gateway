@@ -1,12 +1,14 @@
 import { useEffect } from "react";
-import { AppDispatch } from "../store";
+import { AppDispatch, RootState } from "../store";
 import { loadTransactions } from "../store/paymentSlice";
 import { Transaction } from "../types/payment";
+import { useDispatch, useSelector } from "react-redux";
 
-export function useTransactionStorage(
-  dispatch: AppDispatch,
-  transactions: Transaction[]
-) {
+export function useTransactionStorage() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { transactions } = useSelector(
+  (state: RootState) => state.payment
+);
   useEffect(() => {
     const saved = localStorage.getItem("transactions");
     if (!saved) return;
