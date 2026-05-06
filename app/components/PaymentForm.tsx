@@ -1,22 +1,28 @@
 'use client';
 import { useState, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { detectCardType } from '../utils/card';
 import { validateCardNumber, validateCVV, validateExpiry, validateName } from '../utils/validation';
 import { formatCardNumber } from '../utils/format';
 import CardPreview from './CardPreview';
+import { makePayment } from '../utils/api';
+import { RootState } from '../store';
+import { addTransaction, setError, setStatus, setTransactionId } from '../store/paymentSlice';
+import { PaymentFormValues, PaymentPayload, Currency } from '../types/payment';
 
 export default function PaymentForm() {
-  const [form, setForm] = useState({
-    name: '',
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
-    amount: '',
-    currency: 'INR',
-  });
+const [form, setForm] = useState<PaymentFormValues>({
+  name: '',
+  cardNumber: '',
+  expiry: '',
+  cvv: '',
+  amount: '',
+  currency: 'INR',
+});
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-
+  const dispatch = useDispatch();
+  const { status } = useSelector((state: RootState) => state.payment);
   const cardType = useMemo(
     () => detectCardType(form.cardNumber.replace(/\s/g, '')),
     [form.cardNumber]
@@ -37,6 +43,76 @@ export default function PaymentForm() {
   const handleBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
+
+  const handleSubmit = async () => {
+  if (status === 'processing') return;
+
+  const transactionId = crypto.randomUUID();
+  const payload: PaymentPayload = {
+    ...form,
+    amount: Number(form.amount),
+    transactionId,
+  };
+
+  dispatch(setTransactionId(transactionId));
+  dispatch(setStatus('processing'));
+
+  const controller = new AbortController();
+
+  // Timeout after 6 sec
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 6000);
+
+  try {
+    
+    const data = await makePayment(payload, controller.signal);
+
+    clearTimeout(timeout);
+
+    if (data.status === 'success') {
+      dispatch(setStatus('success'));
+
+      dispatch(
+        addTransaction({
+          id: transactionId,
+          amount: Number(form.amount),
+          status: 'success',
+          timestamp: Date.now(),
+        })
+      );
+    } else {
+      dispatch(setStatus('failed'));
+      dispatch(setError(data.reason || 'Payment failed'));
+
+      dispatch(
+        addTransaction({
+          id: transactionId,
+          amount: Number(form.amount),
+          status: 'failed',
+          timestamp: Date.now(),
+        })
+      );
+    }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      dispatch(setStatus('timeout'));
+
+      dispatch(
+        addTransaction({
+          id: transactionId,
+          amount: Number(form.amount),
+          status: 'timeout',
+          timestamp: Date.now(),
+        })
+      );
+    } else {
+      dispatch(setStatus('failed'));
+      dispatch(setError('Network error'));
+    }
+  }
+};
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-4">
@@ -121,7 +197,7 @@ export default function PaymentForm() {
         <select
           className="border p-2"
           value={form.currency}
-          onChange={(e) => setForm({ ...form, currency: e.target.value })}
+          onChange={(e) => setForm({ ...form, currency: e.target.value as Currency, })}
         >
           <option>INR</option>
           <option>USD</option>
@@ -133,12 +209,13 @@ export default function PaymentForm() {
       )}
 
       <button
-        disabled={!isFormValid}
+        disabled={!isFormValid || status === "processing"}
+        onClick={handleSubmit}
         className={`w-full p-2 text-white ${
           isFormValid ? "bg-black" : "bg-gray-400"
         }`}
       >
-        Pay Now
+        {status === "processing" ? "Processing..." : "Pay Now"}
       </button>
     </div>
   );
