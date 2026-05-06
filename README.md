@@ -84,19 +84,11 @@ npm run build
 ## Screenshots
 
 <img width="1790" height="889" alt="Screenshot 2026-05-07 021716" src="https://github.com/user-attachments/assets/90961db9-503c-4958-86cf-157b6d19bc3f" />
-
-
-
+<br />
 <img width="1773" height="880" alt="Screenshot 2026-05-07 021736" src="https://github.com/user-attachments/assets/ffa3b9de-0543-4029-8f1d-3039f8a9386e" />
-
-
-
+<br />
 <img width="449" height="796" alt="Screenshot 2026-05-07 025450" src="https://github.com/user-attachments/assets/df5d61a7-2292-48df-85af-d05dac6778b4" />
-
-
-
+<br />
 <img width="439" height="784" alt="Screenshot 2026-05-07 025502" src="https://github.com/user-attachments/assets/9a26df45-91d2-404e-b84e-35a52ecb91e7" />
-
-
-
+<br />
 <img width="441" height="738" alt="Screenshot 2026-05-07 025510" src="https://github.com/user-attachments/assets/6eb6a316-1b6b-4af1-bc15-0060a7bf8c21" />
