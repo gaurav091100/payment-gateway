@@ -25,7 +25,7 @@ const initialState: PaymentState = {
 };
 
 const paymentSlice = createSlice({
-  name: 'payment',
+  name: "payment",
   initialState,
   reducers: {
     setStatus(state, action: PayloadAction<PaymentStatus>) {
@@ -49,6 +49,18 @@ const paymentSlice = createSlice({
     loadTransactions(state, action: PayloadAction<Transaction[]>) {
       state.transactions = action.payload;
     },
+    updateTransactionStatus(
+      state,
+      action: PayloadAction<{
+        id: string;
+        status: PaymentStatus;
+      }>,
+    ) {
+      const tx = state.transactions.find((t) => t.id === action.payload.id);
+      if (tx) {
+        tx.status = action.payload.status;
+      }
+    },
   },
 });
 
@@ -60,6 +72,7 @@ export const {
   addTransaction,
   setError,
   loadTransactions,
+  updateTransactionStatus
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;

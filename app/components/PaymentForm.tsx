@@ -7,8 +7,9 @@ import { formatCardNumber } from '../utils/format';
 import CardPreview from './CardPreview';
 import { makePayment } from '../utils/api';
 import { RootState } from '../store';
-import { addTransaction, setError, setStatus, setTransactionId } from '../store/paymentSlice';
-import { PaymentFormValues, PaymentPayload, Currency } from '../types/payment';
+import { addTransaction, incrementRetry, resetRetry, setError, setStatus, setTransactionId, updateTransactionStatus } from '../store/paymentSlice';
+import { PaymentFormValues, Currency } from '../types/payment';
+import { mapToPaymentPayload } from '../utils/mapper';
 
 export default function PaymentForm() {
 const [form, setForm] = useState<PaymentFormValues>({
@@ -22,7 +23,9 @@ const [form, setForm] = useState<PaymentFormValues>({
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const dispatch = useDispatch();
-  const { status } = useSelector((state: RootState) => state.payment);
+  const { currentTransactionId, retryCount, status } = useSelector(
+  (state: RootState) => state.payment
+);
   const cardType = useMemo(
     () => detectCardType(form.cardNumber.replace(/\s/g, '')),
     [form.cardNumber]
@@ -47,50 +50,51 @@ const [form, setForm] = useState<PaymentFormValues>({
   const handleSubmit = async () => {
   if (status === 'processing') return;
 
-  const transactionId = crypto.randomUUID();
-  const payload: PaymentPayload = {
-    ...form,
-    amount: Number(form.amount),
-    transactionId,
-  };
+  let transactionId = currentTransactionId;
 
-  dispatch(setTransactionId(transactionId));
+  if (!transactionId) {
+    transactionId = crypto.randomUUID();
+    dispatch(setTransactionId(transactionId));
+    dispatch(resetRetry());
+        dispatch(
+      addTransaction({
+        id: transactionId,
+        amount: Number(form.amount),
+        status: 'processing',
+        timestamp: Date.now(),
+      })
+    );
+  } else {
+    dispatch(incrementRetry());
+  }
+
   dispatch(setStatus('processing'));
 
-  const controller = new AbortController();
+  const payload = mapToPaymentPayload(form, transactionId);
 
-  // Timeout after 6 sec
-  const timeout = setTimeout(() => {
-    controller.abort();
-  }, 6000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
 
   try {
-    
     const data = await makePayment(payload, controller.signal);
-
     clearTimeout(timeout);
 
     if (data.status === 'success') {
       dispatch(setStatus('success'));
 
       dispatch(
-        addTransaction({
+        updateTransactionStatus({
           id: transactionId,
-          amount: Number(form.amount),
           status: 'success',
-          timestamp: Date.now(),
         })
       );
     } else {
       dispatch(setStatus('failed'));
-      dispatch(setError(data.reason || 'Payment failed'));
 
       dispatch(
-        addTransaction({
+        updateTransactionStatus({
           id: transactionId,
-          amount: Number(form.amount),
           status: 'failed',
-          timestamp: Date.now(),
         })
       );
     }
@@ -100,16 +104,13 @@ const [form, setForm] = useState<PaymentFormValues>({
       dispatch(setStatus('timeout'));
 
       dispatch(
-        addTransaction({
+        updateTransactionStatus({
           id: transactionId,
-          amount: Number(form.amount),
           status: 'timeout',
-          timestamp: Date.now(),
         })
       );
     } else {
       dispatch(setStatus('failed'));
-      dispatch(setError('Network error'));
     }
   }
 };
@@ -197,7 +198,9 @@ const [form, setForm] = useState<PaymentFormValues>({
         <select
           className="border p-2"
           value={form.currency}
-          onChange={(e) => setForm({ ...form, currency: e.target.value as Currency, })}
+          onChange={(e) =>
+            setForm({ ...form, currency: e.target.value as Currency })
+          }
         >
           <option>INR</option>
           <option>USD</option>
@@ -217,6 +220,19 @@ const [form, setForm] = useState<PaymentFormValues>({
       >
         {status === "processing" ? "Processing..." : "Pay Now"}
       </button>
+      {status !== "idle" && status !== "success" && retryCount < 3 && (
+        <button
+          onClick={handleSubmit}
+          disabled={status === "processing"}
+          className="mt-4 bg-blue-600 text-white p-2 w-full"
+        >
+          Retry ({retryCount + 1}/3)
+        </button>
+      )}
+
+      {retryCount >= 3 && status !== "success" && (
+        <p className="text-red-500 mt-2">Maximum retry attempts reached</p>
+      )}
     </div>
   );
 }
