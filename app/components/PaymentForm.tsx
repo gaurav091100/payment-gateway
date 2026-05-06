@@ -11,6 +11,7 @@ import { addTransaction, incrementRetry, loadTransactions, resetRetry, setError,
 import { PaymentFormValues, Currency } from '../types/payment';
 import { mapToPaymentPayload } from '../utils/mapper';
 import TransactionHistory from './TransactionsHistory';
+import StatusScreen from './StatusScreen';
 
 export default function PaymentForm() {
 const [form, setForm] = useState<PaymentFormValues>({
@@ -24,7 +25,7 @@ const [form, setForm] = useState<PaymentFormValues>({
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const dispatch = useDispatch();
-  const { currentTransactionId, retryCount, status, transactions } = useSelector(
+  const { currentTransactionId, retryCount, status, transactions, error } = useSelector(
   (state: RootState) => state.payment
 );
 
@@ -90,6 +91,8 @@ const [form, setForm] = useState<PaymentFormValues>({
           status: 'success',
         })
       );
+      dispatch(setTransactionId(""));
+      dispatch(resetRetry());
     } else {
       dispatch(setStatus('failed'));
 
@@ -234,6 +237,7 @@ useEffect(() => {
       >
         {status === "processing" ? "Processing..." : "Pay Now"}
       </button>
+      <StatusScreen status={status} error={error} />
       {status !== "idle" && status !== "success" && retryCount < 3 && (
         <button
           onClick={handleSubmit}
