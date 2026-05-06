@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { detectCardType } from '../utils/card';
 import { validateCardNumber, validateCVV, validateExpiry, validateName } from '../utils/validation';
 import { formatCardNumber } from '../utils/format';
+import CardPreview from './CardPreview';
 
 export default function PaymentForm() {
   const [form, setForm] = useState({
@@ -39,6 +40,12 @@ export default function PaymentForm() {
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-4">
+      <CardPreview
+        name={form.name}
+        cardNumber={form.cardNumber}
+        expiry={form.expiry}
+        cardType={cardType}
+      />
       {/* Name */}
       <div>
         <input
