@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { detectCardType } from '../utils/card';
 import { validateCardNumber, validateCVV, validateExpiry, validateName } from '../utils/validation';
@@ -7,9 +7,10 @@ import { formatCardNumber } from '../utils/format';
 import CardPreview from './CardPreview';
 import { makePayment } from '../utils/api';
 import { RootState } from '../store';
-import { addTransaction, incrementRetry, resetRetry, setError, setStatus, setTransactionId, updateTransactionStatus } from '../store/paymentSlice';
+import { addTransaction, incrementRetry, loadTransactions, resetRetry, setError, setStatus, setTransactionId, updateTransactionStatus } from '../store/paymentSlice';
 import { PaymentFormValues, Currency } from '../types/payment';
 import { mapToPaymentPayload } from '../utils/mapper';
+import TransactionHistory from './TransactionsHistory';
 
 export default function PaymentForm() {
 const [form, setForm] = useState<PaymentFormValues>({
@@ -23,9 +24,10 @@ const [form, setForm] = useState<PaymentFormValues>({
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const dispatch = useDispatch();
-  const { currentTransactionId, retryCount, status } = useSelector(
+  const { currentTransactionId, retryCount, status, transactions } = useSelector(
   (state: RootState) => state.payment
 );
+
   const cardType = useMemo(
     () => detectCardType(form.cardNumber.replace(/\s/g, '')),
     [form.cardNumber]
@@ -115,6 +117,18 @@ const [form, setForm] = useState<PaymentFormValues>({
   }
 };
 
+
+useEffect(() => {
+  const saved = localStorage.getItem('transactions');
+  if (saved) {
+    dispatch(loadTransactions(JSON.parse(saved)));
+  }
+}, [dispatch]);
+
+
+useEffect(() => {
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+}, [transactions]);
   return (
     <div className="max-w-md mx-auto p-4 space-y-4">
       <CardPreview
@@ -233,6 +247,7 @@ const [form, setForm] = useState<PaymentFormValues>({
       {retryCount >= 3 && status !== "success" && (
         <p className="text-red-500 mt-2">Maximum retry attempts reached</p>
       )}
+      <TransactionHistory />
     </div>
   );
 }
