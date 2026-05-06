@@ -3,6 +3,16 @@ export type CardType = 'visa' | 'mastercard' | 'amex' | 'unknown';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CURRENCIES = ['INR', 'USD'] as const;
 export type Currency = typeof CURRENCIES[number]; 
+export type PaymentStatus = 'idle' | 'processing' | 'success' | 'failed' | 'timeout';
+
+export interface Transaction {
+  id: string;
+  amount: number;
+  currency: Currency;
+  status: PaymentStatus;
+  timestamp: number;
+}
+
 export interface PaymentFormValues {
   cardNumber: string;
   name: string;

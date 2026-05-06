@@ -1,6 +1,7 @@
 'use client';
 
-import { PaymentStatus } from "../store/paymentSlice";
+import { useEffect, useRef } from "react";
+import { PaymentStatus } from "../types/payment";
 
 interface Props {
   status: PaymentStatus;
@@ -8,12 +9,32 @@ interface Props {
 }
 
 export default function StatusScreen({ status, error }: Props) {
-  if (status === 'idle') return null;
+  const statusRef = useRef<HTMLDivElement>(null);
+  const baseClass =
+    "mt-4 rounded-2xl border px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500";
+
+  useEffect(() => {
+    if (status !== 'idle') {
+      statusRef.current?.focus();
+    }
+  }, [status]);
+
+
+  
+  if (status === 'idle'){
+    return (
+      <div className="rounded-2xl px-4 py-3 text-sm text-slate-600">
+        <p className="mt-1">
+          No payment initiated yet. Fill the form and click “Pay Now”.
+        </p>
+      </div>
+    )
+  }
 
   if (status === 'processing') {
     return (
-      <div className="mt-4 p-4 border rounded text-center">
-        <p className="text-blue-600 font-semibold">
+      <div ref={statusRef} tabIndex={-1} aria-live="polite" className={`${baseClass} border-blue-200 bg-blue-50 text-blue-800`}>
+        <p className="font-semibold">
           Processing payment...
         </p>
       </div>
@@ -22,9 +43,9 @@ export default function StatusScreen({ status, error }: Props) {
 
   if (status === 'success') {
     return (
-      <div className="mt-4 p-4 border rounded text-center">
-        <p className="text-green-600 font-semibold">
-          Payment Successful 🎉
+      <div ref={statusRef} tabIndex={-1} aria-live="polite" className={`${baseClass} border-emerald-200 bg-emerald-50 text-emerald-800`}>
+        <p className="font-semibold">
+          Payment Successful
         </p>
       </div>
     );
@@ -32,12 +53,12 @@ export default function StatusScreen({ status, error }: Props) {
 
   if (status === 'failed') {
     return (
-      <div className="mt-4 p-4 border rounded text-center">
-        <p className="text-red-600 font-semibold">
+      <div ref={statusRef} tabIndex={-1} aria-live="polite" className={`${baseClass} border-red-200 bg-red-50 text-red-800`}>
+        <p className="font-semibold">
           Payment Failed
         </p>
         {error && (
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-red-700/90">
             {error}
           </p>
         )}
@@ -47,11 +68,11 @@ export default function StatusScreen({ status, error }: Props) {
 
   if (status === 'timeout') {
     return (
-      <div className="mt-4 p-4 border rounded text-center">
-        <p className="text-yellow-600 font-semibold">
-          Request Timed Out ⏳
+      <div ref={statusRef} tabIndex={-1} aria-live="polite" className={`${baseClass} border-amber-200 bg-amber-50 text-amber-800`}>
+        <p className="font-semibold">
+          Request Timed Out
         </p>
-        <p className="text-sm text-gray-500">
+        <p className="mt-1 text-xs text-amber-700/90">
           Please try again
         </p>
       </div>

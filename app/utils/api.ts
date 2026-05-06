@@ -1,9 +1,14 @@
 import { PaymentPayload } from "../types/payment";
 
+export type PaymentApiResponse =
+  | { status: "success"; transactionId: string }
+  | { status: "failed"; reason?: string; transactionId: string }
+  | { status: "timeout"; transactionId: string };
+
 export const makePayment = async (
   payload: PaymentPayload,
   signal: AbortSignal
-) => {
+): Promise<PaymentApiResponse> => {
   const res = await fetch('/api/pay', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -17,5 +22,5 @@ export const makePayment = async (
     throw new Error('Network error');
   }
 
-  return res.json();
+  return (await res.json()) as PaymentApiResponse;
 };

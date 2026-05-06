@@ -1,5 +1,13 @@
-export const validateCardNumber = (num: string) => {
-  return num.replace(/\s/g, '').length >= 16;
+import { CardType } from "../types/payment";
+
+export const validateCardNumber = (num: string, cardType: CardType) => {
+  const digits = num.replace(/\s/g, '');
+  if (!/^\d+$/.test(digits)) return false;
+
+  if (cardType === 'amex') return digits.length === 15;
+  if (cardType === 'visa' || cardType === 'mastercard') return digits.length === 16;
+
+  return digits.length >= 13 && digits.length <= 19;
 };
 
 export const validateName = (name: string) => {

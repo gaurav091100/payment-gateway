@@ -5,7 +5,7 @@ export const mapToPaymentPayload = (
   transactionId: string
 ): PaymentPayload => {
   return {
-    cardNumber: form.cardNumber,
+    cardNumber: form.cardNumber.replace(/\s/g, ''),
     name: form.name,
     expiry: form.expiry,
     cvv: form.cvv,

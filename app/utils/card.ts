@@ -1,9 +1,18 @@
 import { CardType } from "../types/payment";
 
 export const detectCardType = (number: string): CardType => {
-  if (/^4[0-9]{12}(?:[0-9]{3})?$/.test(number)) return 'visa';
-  if (/^5[1-5][0-9]{14}$/.test(number)) return 'mastercard';
-  if (/^3[47][0-9]{13}$/.test(number)) return 'amex';
+  const digits = number.replace(/\D/g, "");
+
+  if (digits.startsWith("4")) return "visa";
+
+  const firstTwo = Number(digits.slice(0, 2));
+  const firstFour = Number(digits.slice(0, 4));
+  if ((firstTwo >= 51 && firstTwo <= 55) || (firstFour >= 2221 && firstFour <= 2720)) {
+    return "mastercard";
+  }
+
+  if (digits.startsWith("34") || digits.startsWith("37")) return "amex";
+
   return 'unknown';
 }
 

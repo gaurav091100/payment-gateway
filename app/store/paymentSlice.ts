@@ -1,18 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type PaymentStatus = 'idle' | 'processing' | 'success' | 'failed' | 'timeout';
-
-interface Transaction {
-  id: string;
-  amount: number;
-  status: PaymentStatus;
-  timestamp: number;
-}
+import { PaymentStatus, Transaction } from '../types/payment';
 
 interface PaymentState {
   status: PaymentStatus;
   transactions: Transaction[];
   currentTransactionId: string | null;
+  selectedTransactionId: string | null;
   retryCount: number;
   error?: string;
 }
@@ -21,6 +14,7 @@ const initialState: PaymentState = {
   status: 'idle',
   transactions: [],
   currentTransactionId: null,
+  selectedTransactionId: null,
   retryCount: 0,
 };
 
@@ -31,7 +25,7 @@ const paymentSlice = createSlice({
     setStatus(state, action: PayloadAction<PaymentStatus>) {
       state.status = action.payload;
     },
-    setTransactionId(state, action: PayloadAction<string>) {
+    setTransactionId(state, action: PayloadAction<string | null>) {
       state.currentTransactionId = action.payload;
     },
     incrementRetry(state) {
@@ -48,6 +42,9 @@ const paymentSlice = createSlice({
     },
     loadTransactions(state, action: PayloadAction<Transaction[]>) {
       state.transactions = action.payload;
+    },
+    selectTransaction(state, action: PayloadAction<string | null>) {
+      state.selectedTransactionId = action.payload;
     },
     updateTransactionStatus(
       state,
@@ -72,7 +69,8 @@ export const {
   addTransaction,
   setError,
   loadTransactions,
-  updateTransactionStatus
+  updateTransactionStatus,
+  selectTransaction
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;
